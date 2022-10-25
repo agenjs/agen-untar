@@ -5,9 +5,13 @@ export default async function* rawUntar(it) {
   const BLOCK_SIZE = 512;
   while (true) {
     const buf = await readBlock(BLOCK_SIZE);
-    if (buf.length < 4) break;
-    const bufferView = new DataView(buf, 0, buf.length);
+
+    const blockLen = getBlockLength(buf);
+    if (blockLen < 4) break ;
+
+    const bufferView = new DataView(buf, 0, blockLen);
     if (bufferView.getUint32(0, true) === 0) break;
+
     const readString = newStringReader(bufferView);
 
     let isHeaderFile = false;
@@ -80,17 +84,17 @@ export default async function* rawUntar(it) {
     // File data is padded to reach a 512 byte boundary; skip the padded bytes too.
     const paddedBytes = file.size % BLOCK_SIZE;
     if (paddedBytes !== 0) {
-      await readBlock(paddedBytes);
+      await readBlock(BLOCK_SIZE - paddedBytes);
     }
 
+
     if (isHeaderFile) {
-      /* continue; */
+      continue; 
     }
 
     readGlobalPaxHeader && readGlobalPaxHeader(file);
     readPaxHeader && readPaxHeader(file);
     readPaxHeader = null;
-
     yield file;
   }
 }
@@ -111,25 +115,34 @@ function newStringReader(bufferView) {
   }
 }
 
+async function* toIterator(o) {
+  yield* o;
+}
+
+function getBlockLength(block) {
+  return block.byteLength; // || block.length;
+}
 function newBlockReader(it) {
-  let block, start = 0;
+  it = toIterator(it);
+  let block, blockLen = 0, start = 0;
   return async function(size) {
     const chunks = [];
     while (size > 0) {
-      if (block && start < block.length) {
-        const s = Math.min(size, block.length - start);
+      if (start < blockLen) {
+        const s = Math.min(size, blockLen - start);
         const chunk = (block.subarray || block.slice).call(block, start, start + s);
         chunks.push(chunk);
         start += s;
         size -= s;
       }
       // Read the next block. It allows to successfully finish the stream.
-      if (!block || start >= block.length) {
+      if (start >= blockLen) {
         block = [];
         start = 0;
         const slot = await it.next();
         if (!slot || slot.done) break;
         block = await slot.value;
+        blockLen = getBlockLength(block);
       }
     }
     return await new Blob(chunks).arrayBuffer()
