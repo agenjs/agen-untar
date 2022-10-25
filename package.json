@@ -1,12 +1,12 @@
 {
-  "name": "@agen/zip",
-  "version": "0.0.6",
-  "description": "Unzip with Async Iterators",
+  "name": "@agen/untar",
+  "version": "0.0.1",
+  "description": "Ununtar with Async Iterators",
   "keywords": [
     "async",
     "generators"
   ],
-  "homepage": "https://github.com/agenjs/agen-zip/",
+  "homepage": "https://github.com/agenjs/agen-untar/",
   "license": "BSD-3-Clause",
   "author": {
     "name": "Mikhail Kotelnikov"
@@ -18,24 +18,24 @@
     "src/**/*.js"
   ],
   "main": "src/index.js",
-  "module": "dist/esm/agen-zip-esm.js",
-  "jsdelivr": "dist/cjs/agen-zip.min.js",
-  "unpkg": "dist/cjs/agen-zip.min.js",
+  "module": "dist/esm/agen-untar-esm.js",
+  "jsdelivr": "dist/cjs/agen-untar.min.js",
+  "unpkg": "dist/cjs/agen-untar.min.js",
   "exports": {
     "package.json": "./package.json",
-    "umd": "./dist/cjs/agen-zip.min.js",
-    "require": "./dist/cjs/agen-zip.js",
+    "umd": "./dist/cjs/agen-untar.min.js",
+    "require": "./dist/cjs/agen-untar.js",
     "default": "./src/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/agenjs/agen-zip.git"
+    "url": "https://github.com/agenjs/agen-untar.git"
   },
   "scripts": {
     "pretest": "rollup -c",
     "test": "node ./test/index.js && eslint src",
     "prepublishOnly": "rm -rf dist && yarn test",
-    "postpublish": "zip -j dist/agen-zip.zip -- LICENSE README.md dist/*.js"
+    "postpublish": "untar -j dist/agen-untar.untar -- LICENSE README.md dist/*.js"
   },
   "sideEffects": false,
   "devDependencies": {
