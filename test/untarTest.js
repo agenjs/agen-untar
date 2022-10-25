@@ -8,10 +8,10 @@ import { promises as fs } from "fs";
 import untar from "../src/untar.js";
 
 
-async function readFile(filePath) {
+async function* readFile(filePath) {
   const fullPath = new URL(filePath, __baseUrl).pathname;
   const data = await fs.readFile(fullPath, "binary");
-  return Buffer.from(data);
+  yield Buffer.from(data);
 }
 
 async function toString(content) {
