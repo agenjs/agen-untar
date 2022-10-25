@@ -4,9 +4,8 @@
 This package contains a AsyncIterator-based untar utility methods. The main method - `untar` - provides
 an asynchronous iterator over file entries stored in the archive. 
 The structure of returned file instances:
-* `async* content()` - return an async iterator over byte content of the file; note that this method 
-  *do not* uncomress the data; use the `@agen/gzip` to inflate bytes.
 * `path` - path to the file; for directories it contains the trailing `/` symbol.
+* `async* content()` - return an async iterator over the raw content of the file
 * `size` - the total size of the file
 * `modified` the data of the file modification
 * `mode` the file mode
@@ -33,31 +32,35 @@ Example:
 ```javascript
 
 import fs from 'fs';
-import { unzip } from '@agen/untar';
+import { untar } from '@agen/untar';
 
 const stream = fs.createReadStream('./MyArchive.tar'); // Node streams are AsyncIterator generators
-const files = untar(stream); // returns an Async Generator
-
-// Now we can decompress and read text content from files:
-for await (let file of files()) {
+for await (let file of untar(stream)) {
   console.log('>', file.path, file.size);
-  
+  let content;
+  if (file.path.match(/\.txt$/))  {
+    content = await toString(file.content());
+  } else {
+    content = await toBlob(file.content());
+  };
+  console.log('>', content);
+}
 
-  // Function transforming the content:
-  const f = compose(
-    // Step 1: Inflate compressed files
-    // IMPORTANT: use the 'raw' mode to inflate the content
-    file.compressed && inflate({ raw : true }), 
-
-    // Step 2: Decode text files:
-    file.text.match(/\.txt$/) && decode()
-  );
-
-  let it = f(file.content());
-  for let (let block of it) {
-    // Blocks are decompressed and decoded to UTF8 for text files:
-    console.log(block);
+async function toBlob(content) {
+  const chunks = [];
+  for await (let block of content) {
+    chunks.push(chunk);
   }
+  return new Blob(chunks);
+}
+
+async function toString(content) {
+  let str = '';
+  const decoder = new TextDecoder();
+  for await (let block of content) {
+    str += decoder.decode(block);
+  }
+  return str;
 }
 
 ```
