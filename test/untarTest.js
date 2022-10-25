@@ -4,14 +4,15 @@ import tape from "tape-await";
 const __baseUrl = import.meta.url;
 const __filename = new URL(__baseUrl).pathname;
 const __dirname = new URL('.', __baseUrl).pathname;
-import { promises as fs } from "fs";
+import fs from "fs";
+// import { promises as fs } from "fs";
 import untar from "../src/untar.js";
 
 
 async function* readFile(filePath) {
   const fullPath = new URL(filePath, __baseUrl).pathname;
-  const data = await fs.readFile(fullPath, "binary");
-  yield Buffer.from(data);
+  const stream = fs.createReadStream(fullPath);
+  yield* stream;
 }
 
 async function toString(content) {
@@ -23,9 +24,15 @@ async function toString(content) {
   return str;
 }
 
-tape('makeRelative', async (t) => {
-  const buf = await readFile("./data/test.tar");
-  const control = {
+async function testTarFile(t, filePath, control) {
+  const stream = await readFile(filePath);
+  for await (const file of untar(stream)) {
+    t.equal(control[file.path], await toString(file.content()));
+  }
+}
+
+tape('untar - should extract multi-file archives ', async (t) => {
+  await testTarFile(t, "./data/test.tar", {
     '1.txt': 'one',
     '2.txt': 'two',
     '3.txt': 'three',
@@ -37,41 +44,25 @@ tape('makeRelative', async (t) => {
     'directory/2.txt': 'two',
     'directory/3.txt': 'three',
     'object.json': '{"prop":"value"}'
-  }
+  });
+})
 
-  for await (const file of untar(buf)) {
-    t.equal(control[file.path], await toString(file.content()));
-  }
-  // const buf = fs.readFileSync()
+tape('untar - should extract pax headers ', async (t) => {
+  await testTarFile(t, "./data/test-pax.tar", {
+    'é.txt': '',
+  });
+})
 
-  // const fileNames = [
-  //   "1.txt",
-  //   "2.txt",
-  //   "3.txt",
-  //   "511.txt",
-  //   "512.txt",
-  //   "513.txt",
-  //   "directory/",
-  //   "directory/1.txt",
-  //   "directory/2.txt",
-  //   "directory/3.txt",
-  //   "object.json"
-  // ];
+tape('untar - should extract files with common prefixes ', async (t) => {
+  await testTarFile(t, "./data/test-ustar-with-prefix.tar", {
+    "directory-000/directory-001/directory-002/directory-003/directory-004/directory-005/directory-006/foo.txt": 'text',
+  });
+});
 
-  // const fileContent = [
-  //   (ct) => ct === "one",
-  //   (ct) => ct === "two",
-  //   (ct) => ct === "three",
-  //   (ct) => ct.length === 511,
-  //   (ct) => ct.length === 512,
-  //   (ct) => ct.length === 513,
-  //   (ct) => ct === "",
-  //   (ct) => ct === "one",
-  //   (ct) => ct === "two",
-  //   (ct) => ct === "three",
-  //   (ct) => ct === '{"prop":"value"}'
-  // ]
-
+tape('untar - should extract single file ', async (t) => {
+  await testTarFile(t, "./data/test-ustar.tar", {
+    "foo": 'iRFmWghs3CK9/2HSvRja4TzX8HsRwzbVYl+h0HRkH9uPho2BGmrG5a0vpHsPn2W7Pn33Ux/+rkLSA3GUOX/WiPmP+h73T1r0DZIDJXtOgYWIUhsqUE0zUz1LEaO/y2H+WAe/ZlWt90N2KHka0bkXajoEAdOUrN42PKl/3mu7jiCW45hTNBDp3ArJD8QHN7l3JFMfnusPuir9+K8Oh6bEfN2bHhXjZ41ZkweCHZWUKT8NsdHeObQnXAyvkU5q1OhefE0+uvksVba2ZNyhThAAGZgiqEtTOJJLm8zgcI5avXHMVwlR6mt1jepOct4jQNlAdpkmslKW3BuiwLswGAsw7ttr/pRa/oCT4HUoBWcY3w96+TGR6uXtvbDOM9WhPXGo+1bwhAsA/RXPA1ZX+oS6t4rl/ZvkMZZN4VO5OvKph8tthdG3ocpXUw11zv6mQ7n6kyObLDCMFOtkdnhQBU/BGEK6mw4oTRa1Hd91+bUUqQh6hl3JeDk/t2KDWOEehOxgOqfVG72UuMeo2IayNK/pUXrcUXuywq9KT+bWQxdJsXzwkkyT8Ovz4oiIzHAa14e/Ib8Xxz+BHwpN3TtOXsHziuqLGMzqv867CganwsFxNEGRaTQ6C2bRK+OxetaxhQqe1G/UWwfi5a9PuJC3wfITSa0IhBot9hGAG35VVb4LsRE=',
+  });
 
 })
 

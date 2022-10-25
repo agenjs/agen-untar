@@ -84,7 +84,7 @@ export default async function* rawUntar(it) {
     }
 
     if (isHeaderFile) {
-      continue;
+      /* continue; */
     }
 
     readGlobalPaxHeader && readGlobalPaxHeader(file);
