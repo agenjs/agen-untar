@@ -1,6 +1,6 @@
 {
   "name": "@agen/untar",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Ununtar with Async Iterators",
   "keywords": [
     "async",
@@ -34,8 +34,7 @@
   "scripts": {
     "pretest": "rollup -c",
     "test": "node ./test/index.js && eslint src",
-    "prepublishOnly": "rm -rf dist && yarn test",
-    "postpublish": "untar -j dist/agen-untar.zip -- LICENSE README.md dist/*.js"
+    "prepublishOnly": "rm -rf dist && yarn test"
   },
   "sideEffects": false,
   "devDependencies": {
