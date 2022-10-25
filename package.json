@@ -35,7 +35,7 @@
     "pretest": "rollup -c",
     "test": "node ./test/index.js && eslint src",
     "prepublishOnly": "rm -rf dist && yarn test",
-    "postpublish": "untar -j dist/agen-untar.untar -- LICENSE README.md dist/*.js"
+    "postpublish": "untar -j dist/agen-untar.zip -- LICENSE README.md dist/*.js"
   },
   "sideEffects": false,
   "devDependencies": {
